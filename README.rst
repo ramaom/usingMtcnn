@@ -1,3 +1,8 @@
+졸업프로젝트를 위한 임시 github.
+추후 Readme 수정 예정.
+https://github.com/ipazc/mtcnn을 돌려보기 위해 일부 작업 수행
+
+--------------
 MTCNN
 #####
 
