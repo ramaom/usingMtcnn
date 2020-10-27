@@ -90,6 +90,7 @@ def checkBetweenEyesTest():
         if not result:
             print("can'ttttttttttttttttt find face on the image")
             print('{},{}'.format(smallWidth, smallHeight))
+            findLeastDetectableDistance(smallImage, smallWidth, smallHeight)
             break
         else:
             print("can find face on the image")
@@ -102,25 +103,73 @@ def checkBetweenEyesTest():
             distance = helper.getDistanceBetween2Point(keypoints['right_eye'], keypoints['left_eye'])
             print('distance : {}, confidence : {}'.format(distance,confidence))
 
+#use binary search to find the least detectable distance
+def findLeastDetectableDistance(image, smallWidth, smallHeight):
+    detector = MTCNN()
+    print('find the least detectable distance\n')
+    undetectedList=[]
 
-# def outputImage(result):
-#     # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
-#     bounding_box = result[0]['box']
-#     keypoints = result[0]['keypoints']
+    largeWidth = int(smallWidth*2)
+    largeHeight = int(smallHeight*2)
+    detected = 0
 
-#     cv2.rectangle(image,
-#                 (bounding_box[0], bounding_box[1]),
-#                 (bounding_box[0]+bounding_box[2], bounding_box[1] + bounding_box[3]),
-#                 (0,155,255),
-#                 2)
+    for i in range(0, 5):
+        middleWidth = int((largeWidth+smallWidth)/2)
+        middleHeight = int((largeHeight+smallHeight)/2)
 
-#     cv2.circle(image,(keypoints['left_eye']), 2, (0,155,255), 2)
-#     cv2.circle(image,(keypoints['right_eye']), 2, (0,155,255), 2)
-#     cv2.circle(image,(keypoints['nose']), 2, (0,155,255), 2)
-#     cv2.circle(image,(keypoints['mouth_left']), 2, (0,155,255), 2)
-#     cv2.circle(image,(keypoints['mouth_right']), 2, (0,155,255), 2)
+        if not detected:
+            #이미지 확대 ->  바이큐빅 보간법
+            middleImage = cv2.resize(src=image, dsize=(
+                middleWidth, middleHeight), interpolation=cv2.INTER_CUBIC)
+        else:
+            #이미지 축소 -> 영역 보간법
+            middleImage = cv2.resize(src=image, dsize=(
+                middleWidth, middleHeight), interpolation=cv2.INTER_AREA)
+        result = detector.detect_faces(middleImage)
 
-#     cv2.imwrite("00000_drawn.jpg", cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+        if not result:
+            print("can'ttttttttttttttttt find face on the image")
+            print('{},{}\n'.format(middleWidth, middleHeight))
+            undetectedList.append(middleHeight)
+            smallWidth = middleWidth
+            smallHeight = middleHeight
+            detected = 0
+
+        else:
+            print("can find face on the image")
+            image = middleImage
+            largeWidth = middleWidth
+            largeHeight = middleHeight
+            detected = 1
+            print('{},{}'.format(middleWidth, middleHeight))
+            keypoints = result[0]['keypoints']
+            confidence = result[0]['confidence']
+            distance = helper.getDistanceBetween2Point(
+                keypoints['right_eye'], keypoints['left_eye'])
+            print('distance : {}, confidence : {}\n'.format(distance, confidence))
+            outputImage(image,result,i)
+
+def outputImage(image,result,tmp):
+    # Result is an array with all the bounding boxes detected. We know that for 'ivan.jpg' there is only one.
+    bounding_box = result[0]['box']
+    keypoints = result[0]['keypoints']
+
+    cv2.rectangle(image,
+                (bounding_box[0], bounding_box[1]),
+                (bounding_box[0]+bounding_box[2], bounding_box[1] + bounding_box[3]),
+                (0,155,255),
+                2)
+
+    cv2.circle(image,(keypoints['left_eye']), 2, (0,155,255), 2)
+    cv2.circle(image,(keypoints['right_eye']), 2, (0,155,255), 2)
+    cv2.circle(image,(keypoints['nose']), 2, (0,155,255), 2)
+    cv2.circle(image,(keypoints['mouth_left']), 2, (0,155,255), 2)
+    cv2.circle(image,(keypoints['mouth_right']), 2, (0,155,255), 2)
+    
+    print("image output")
+
+    outputString = str(tmp)+"drawn.jpg"
+    cv2.imwrite(outputString, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
 if __name__ == "__main__":
     main()
